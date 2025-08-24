@@ -20,4 +20,6 @@ const (
 type Event struct {
 	Type Type
 	Text string
+	// в meta таким образом можно положить что угодно
+	Meta interface{}
 }

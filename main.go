@@ -40,7 +40,6 @@ func mustToken() (string, string) {
 		log.Fatal("token no valid")
 	}
 	if *host == "" {
-		// под капотом будет os.Exit(1)
 		return *token, tgBotHost
 	}
 	return *token, *host
