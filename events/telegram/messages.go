@@ -11,3 +11,9 @@ Caution! After that, this page will be removed from your list.`
 
 const messageHello = "Hello there! \n\n" + msgHelp
 
+const (
+	msgUnknownCommand = "Unknown command 😔"
+	msgNoSavedPages = "You have no saved pages 😔"
+	msgSaved = "Saved! 👍"
+	msgAlreadyExists = "Already exists 😁"
+)

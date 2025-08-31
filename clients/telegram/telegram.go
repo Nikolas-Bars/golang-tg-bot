@@ -26,8 +26,8 @@ const sendMessageMethod = "sendMessage" // метод для отправки с
 
 // New создает новый экземпляр клиента Telegram API
 // Принимает токен бота и адрес API
-func New(token string, host string) Client {
-	return Client{
+func New(token string, host string) *Client {
+	return &Client{
 		host:     host,
 		basePath: newBasePath(token),
 		client:   http.Client{},
@@ -43,11 +43,11 @@ func newBasePath(token string) string {
 // SendMessage отправляет сообщение в указанный чат
 func (c Client) SendMessage(chatID int, text string) error {
 	// создаем параметры запроса
-	q := url.Values{} 
+	q := url.Values{}
 	// Функция strconv.Itoa в Go используется для преобразования целого числа (integer) в строку
 	q.Add("chat_id", strconv.Itoa(chatID))
 	// добавляем текст сообщения
-	q.Add("text", text)                   
+	q.Add("text", text)
 
 	_, err := c.doRequest(sendMessageMethod, q)
 
@@ -67,7 +67,7 @@ func (c Client) Updates(offset int, limit int) ([]Update, error) {
 		strconv.Itoa(offset),
 	)
 	// добавляем ограничение на количество обновлений
-	q.Add("limit", strconv.Itoa(limit)) 
+	q.Add("limit", strconv.Itoa(limit))
 
 	// Выполняем запрос к API для получения обновлений
 	data, err := c.doRequest(getUpdateMethod, q)
@@ -127,5 +127,5 @@ func (c *Client) doRequest(method string, query url.Values) (data []byte, err er
 		return nil, err
 	}
 	// возвращаем полученные данные
-	return body, nil 
+	return body, nil
 }

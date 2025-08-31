@@ -18,8 +18,6 @@ type Storage struct {
 // всем открываем права на все
 const defaultPermission = 0774
 
-var ErrorSavePages = errors.New("no savedPages")
-
 func New(basePath string) Storage {
 	return Storage{ basePath: basePath }
 }
@@ -69,7 +67,7 @@ func (s *Storage) PickRandom(userName string)(page *storage.Page, err error) {
 	}
 
 	if len(files) == 0 {
-		return nil, ErrorSavePages;
+		return nil, storage.ErrorSavePages;
 	}
 	// если Seed задать хардкодом то последовательность
 	//  будет повторяться при каждом запуске

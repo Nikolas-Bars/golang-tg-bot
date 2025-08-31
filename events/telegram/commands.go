@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"errors"
 	"golang-bot/lib/e"
 	"golang-bot/lib/e/storage"
 	"log"
@@ -21,7 +22,7 @@ func (p *ProcessorStruct) doCmd(text string, chatId int, userName string) error 
 	log.Printf("got new command '%s' from '%s'", text, userName)
 
 	if isAddCmd(text) {
-
+		return p.savePage(chatId, text, userName)
 	}
 
 
@@ -29,9 +30,13 @@ func (p *ProcessorStruct) doCmd(text string, chatId int, userName string) error 
 	// помощь - /help, и команда /start
 	switch text{
 	case RndCmd:
+		return p.sendRandom(chatId, userName)
 	case HelpCmd:
+		return p.sendHelp(chatId)
 	case StartCmd:
+		return p.sendHello(chatId)
 	default:
+		return p.tg.SendMessage(chatId, msgUnknownCommand)
 	}
 }
 
@@ -50,10 +55,45 @@ func (p *ProcessorStruct) savePage(chatID int, pageUrl string, username string) 
 	}
 
 	if isExists {
-		return p.tg.SendMessage(chatID, "this command exists")
-		
+		return p.tg.SendMessage(chatID, msgAlreadyExists)
 	}
 
+	if err := p.storage.Save(page); err != nil {
+		return err;
+	}
+
+	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
+		return err;
+	}
+	return nil;
+}
+
+func (p *ProcessorStruct) sendRandom(chatID int, username string) (err error) {
+	defer func() {err = e.WrapIfErr("can`t send random fucnc", err)}()
+
+	page, err := p.storage.PickRandom(username)
+
+	if err != nil && !errors.Is(err, storage.ErrorSavePages) {
+		return err;
+	}
+
+	if errors.Is(err, storage.ErrorSavePages) {
+		return p.tg.SendMessage(chatID, msgNoSavedPages)
+	}
+
+	if err := p.tg.SendMessage(chatID, page.URL); err != nil {
+		return err;
+	}
+	// удаляем страницу если нашли и отдали (как буд-то бы это лишнее)
+	return p.storage.Remove(page)
+}
+
+func (p *ProcessorStruct) sendHelp(chatID int) error {
+	return p.tg.SendMessage(chatID, msgHelp)
+}
+
+func (p *ProcessorStruct) sendHello(chatID int) error {
+	return p.tg.SendMessage(chatID, messageHello)
 }
 
 func isAddCmd(text string) bool {

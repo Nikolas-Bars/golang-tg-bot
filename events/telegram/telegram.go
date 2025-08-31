@@ -13,23 +13,24 @@ var ErrUnknownType = errors.New("unknown event type")
 var ErrGetMeta = errors.New("can`t get meta")
 
 type ProcessorStruct struct {
-	tg *telegram.Client
-	offset int
+	tg      *telegram.Client
+	offset  int
 	storage storage.Storage
 }
 
 type Meta struct {
-	ChatID int
+	ChatID   int
 	Username string
 }
 
 func New(client *telegram.Client, storage storage.Storage) *ProcessorStruct {
 	return &ProcessorStruct{
-		tg: client,
-		offset: 0,
+		tg:      client,
+		offset:  0,
 		storage: storage,
 	}
 }
+
 // возвращаем slice event`ов
 func (p *ProcessorStruct) Fetch(limit int) ([]events.Event, error) {
 	update, err := p.tg.Updates(p.offset, limit)
@@ -62,7 +63,7 @@ func event(upd telegram.Update) events.Event {
 
 	if updType == events.Message {
 		res.Meta = Meta{
-			ChatID: upd.Message.Chat.ID,
+			ChatID:   upd.Message.Chat.ID,
 			Username: upd.Message.From.Username,
 		}
 	}
@@ -87,9 +88,9 @@ func fetchText(u telegram.Update) string {
 func (p *ProcessorStruct) Process(event events.Event) error {
 	switch event.Type {
 	case events.Message:
-		p.processMessage(event)
+		return p.processMessage(event)
 	default:
-		return e.Wrap("can`t process message", ErrUnknownType) 
+		return e.Wrap("can`t process message", ErrUnknownType)
 	}
 }
 
@@ -98,9 +99,15 @@ func (p *ProcessorStruct) processMessage(event events.Event) error {
 	if err != nil {
 		return e.WrapIfErr("can`t process message", err)
 	}
+
+	if err := p.doCmd(event.Text, meta.ChatID, meta.Username); err != nil {
+		return e.Wrap("can`t process Message", err);
+	}
+
+	return nil
 }
 
-func meta(event events.Event)(Meta, error) {
+func meta(event events.Event) (Meta, error) {
 	res, ok := event.Meta.(Meta)
 
 	if !ok {
