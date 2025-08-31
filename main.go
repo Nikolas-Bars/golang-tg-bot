@@ -3,11 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	tgClient "golang-bot/clients/telegram"
+	eventconsumer "golang-bot/consumer/event-consumer"
+	"golang-bot/events/telegram"
+	"golang-bot/lib/e/storage/files"
 	"log"
-	"golang-bot/clients/telegram"
 )
 
 const tgBotHost = "api.telegram.org"
+const batchSize int = 100
+
+const storagePath string = "storage"
 
 func main() {
 	
@@ -15,9 +21,19 @@ func main() {
 
 	fmt.Printf("Token: %v \n", token)
 
-	tgClient :=  telegram.New(token, host)
+	storage := files.New(storagePath)
 
-	fmt.Printf("%v", tgClient)
+	eventProcessor := telegram.New(
+		tgClient.New(token, host),
+		&storage,
+	)
+
+	consumer := eventconsumer.New(eventProcessor, eventProcessor, batchSize);
+
+	if err := consumer.Start(); err != nil {
+		log.Fatal("service is stoped", err)
+	}
+	fmt.Printf("%v", eventProcessor)
 }
 
 func mustToken() (string, string) {
@@ -40,7 +56,6 @@ func mustToken() (string, string) {
 		log.Fatal("token no valid")
 	}
 	if *host == "" {
-		// под капотом будет os.Exit(1)
 		return *token, tgBotHost
 	}
 	return *token, *host
